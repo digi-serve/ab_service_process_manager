@@ -1,0 +1,37 @@
+{
+  "name": "process_manager",
+  "version": "0.0.0",
+  "description": "(AppBuilder) a micro service to manage our process tasks",
+  "main": "app.js",
+  "author": "Johnny Hausman",
+  "license": "MIT",
+  "dependencies": {
+    "ab-utils": "github:Hiro-Nakamura/ab-utils#master",
+    "cote": "^0.21.1",
+    "lodash": "^4.17.15"
+  },
+  "scripts": {
+    "test": "run-p lint custom-tests",
+    "lint": "eslint . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look good.'",
+    "custom-tests": "make test",
+    "dev": "node_modules/.bin/nodemon --inspect=0.0.0.0:9229 app.js",
+    "devBuild": "run-script-os",
+    "devInstall": "run-script-os",
+    "devBuild:win32": "docker run -it --mount type=bind,source=%cd%,target=/app -w /app node npm install",
+    "devInstall:win32": "docker run -it --mount type=bind,source=%cd%,target=/app -w /app node bash",
+    "devBuild:darwin:linux": "docker run -it --mount type=bind,source=\"$(pwd)\",target=/app -w /app node npm install",
+    "devInstall:darwin:linux": "docker run -it --mount type=bind,source=\"$(pwd)\",target=/app -w /app node bash"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "husky": "^3.1.0",
+    "mocha": "^6.2.2",
+    "nodemon": "^1.19.4",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.19.1",
+    "run-script-os": "^1.0.7"
+  }
+}

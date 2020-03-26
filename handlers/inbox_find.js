@@ -10,6 +10,30 @@ module.exports = {
    key: "process_manager.inbox.find",
 
    /**
+    * inputValidation
+    * define the expected inputs to this service handler:
+    * Format:
+    * "parameterName" : {
+    *    "required" : {bool},  // default = false
+    *    "validation" : {fn|obj},
+    *                   {fn} a function(value) that returns true/false if
+    *                        the value is valid.
+    *                   {obj}: .type: {string} the data type
+    *                                 [ "string", "uuid", "email", "number", ... ]
+    * }
+    */
+   inputValidation: {
+      users: {
+         required: true,
+         validation: { type: "object" }
+      },
+      roles: {
+         required: false,
+         validation: { type: "array" } // ??
+      }
+   },
+
+   /**
     * fn
     * our Request handler.
     * @param {obj} req
@@ -48,29 +72,5 @@ module.exports = {
             req.log(err);
             cb(err);
          });
-   },
-
-   /**
-    * inputValidation
-    * define the expected inputs to this service handler:
-    * Format:
-    * "parameterName" : {
-    *    "required" : {bool},  // default = false
-    *    "validation" : {fn|obj},
-    *                   {fn} a function(value) that returns true/false if
-    *                        the value is valid.
-    *                   {obj}: .type: {string} the data type
-    *                                 [ "string", "uuid", "email", "number", ... ]
-    * }
-    */
-   inputValidation: {
-      users: {
-         required: true,
-         validation: { type: "object" }
-      },
-      roles: {
-         required: false,
-         validation: { type: "array" } // ??
-      }
    }
 };

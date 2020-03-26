@@ -10,6 +10,26 @@ module.exports = {
    key: "process_manager.userform.create",
 
    /**
+    * inputValidation
+    * define the expected inputs to this service handler:
+    * Format:
+    * "parameterName" : {
+    *    "required" : {bool},  // default = false
+    *    "validation" : {fn|obj},
+    *                   {fn} a function(value) that returns true/false if
+    *                        the value is valid.
+    *                   {obj}: .type: {string} the data type
+    *                                 [ "string", "uuid", "email", "number", ... ]
+    * }
+    */
+   inputValidation: {
+      // uuid: {
+      //    required: true,
+      //    validation: { type: "uuid" }
+      // }
+   },
+
+   /**
     * fn
     * our Request handler.
     * @param {obj} req
@@ -36,25 +56,5 @@ module.exports = {
             req.log("Error creating UserForm: ", err);
             cb(err);
          });
-   },
-
-   /**
-    * inputValidation
-    * define the expected inputs to this service handler:
-    * Format:
-    * "parameterName" : {
-    *    "required" : {bool},  // default = false
-    *    "validation" : {fn|obj},
-    *                   {fn} a function(value) that returns true/false if
-    *                        the value is valid.
-    *                   {obj}: .type: {string} the data type
-    *                                 [ "string", "uuid", "email", "number", ... ]
-    * }
-    */
-   inputValidation: {
-      // uuid: {
-      //    required: true,
-      //    validation: { type: "uuid" }
-      // }
    }
 };

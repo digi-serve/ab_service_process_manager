@@ -1,5 +1,5 @@
 /**
- * userform.create
+ * inbox_update
  * our Request handler.
  */
 
@@ -7,7 +7,7 @@ module.exports = {
    /**
     * Key: the cote message key we respond to.
     */
-   key: "process_manager.userform.create",
+   key: "process_manager.inbox.update",
 
    /**
     * inputValidation
@@ -23,37 +23,45 @@ module.exports = {
     * }
     */
    inputValidation: {
-      // uuid: {
-      //    required: true,
-      //    validation: { type: "uuid" }
-      // }
+      user: {
+         required: true,
+         validation: { type: "uuid" }
+      },
+      uuid: {
+         required: true,
+         validation: { type: "uuid" }
+      },
+      response: {
+         required: true,
+         validation: { type: "string" }
+      }
    },
 
    /**
     * fn
     * our Request handler.
     * @param {obj} req
-    *        the request object sent by the api_sails/api/controllers/process_manager/userform.create.
+    *        the request object sent by the api_sails/api/controllers/process_manager/inbox_update.
     * @param {fn} cb
     *        a node style callback(err, results) to send data when job is finished
     */
    fn: function handler(req, cb) {
-      //
-      req.log("in process_manager.userform.create");
+      req.log("in process_manager.inbox.update");
+
+      var user = req.param("user");
+      var uuid = req.param("uuid");
+      var response = req.param("response"); // not required
 
       var UserForm = req.model("UserForm");
-      UserForm.create({
-         name: req.param("name"),
-         process: req.param("process"),
-         definition: req.param("definition"),
-         roles: req.param("roles")
-      })
-         .then((form) => {
-            req.log("created form:", form);
-            cb(null, form);
+      UserForm.update(
+         { uuid },
+         { response, responder: user, status: "processed" }
+      )
+         .then((list) => {
+            cb(null, list);
          })
          .catch((err) => {
-            req.log("Error creating UserForm: ", err);
+            req.log(err);
             cb(err);
          });
    }

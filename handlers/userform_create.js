@@ -46,7 +46,8 @@ module.exports = {
          name: req.param("name"),
          process: req.param("process"),
          definition: req.param("definition"),
-         roles: req.param("roles")
+         roles: req.param("roles"),
+         ui: req.param("ui")
       })
          .then((form) => {
             req.log("created form:", form);

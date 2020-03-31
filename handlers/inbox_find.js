@@ -63,6 +63,20 @@ module.exports = {
       UserForm.find({ users, roles, status: "pending" })
          .then((list) => {
             if (list) {
+               // make sure the .ui field is sent back as an object:
+               list.forEach((l) => {
+                  if (l.ui && typeof l.ui == "string") {
+                     try {
+                        l.ui = JSON.parse(l.ui);
+                     } catch (e) {
+                        req.log(
+                           "Error: UserForm.ui is not valid JSON :" + l.ui
+                        );
+                        req.log(e);
+                     }
+                  }
+               });
+
                cb(null, list);
             } else {
                cb(null, null);

@@ -41,14 +41,27 @@ module.exports = {
       //
       req.log("in process_manager.userform.create");
 
-      var UserForm = req.model("UserForm");
-      UserForm.create({
+      // gather the jobData for this request:
+      var newForm = {
          name: req.param("name"),
          process: req.param("process"),
          definition: req.param("definition"),
          roles: req.param("roles"),
          ui: req.param("ui")
-      })
+      };
+
+      // make sure the .ui is a string, not an object
+      if (newForm.ui && typeof newForm.ui != "string") {
+         try {
+            newForm.ui = JSON.stringify(newForm.ui);
+         } catch (e) {
+            // that didn't work, so try this:
+            newForm.ui = "" + newForm.ui;
+         }
+      }
+
+      var UserForm = req.model("UserForm");
+      UserForm.create(newForm)
          .then((form) => {
             req.log("created form:", form);
             cb(null, form);

@@ -75,6 +75,17 @@ module.exports = {
                         req.log(e);
                      }
                   }
+                  if (l.options && typeof l.options == "string") {
+                     try {
+                        l.data = JSON.parse(l.options);
+                     } catch (e) {
+                        req.log(
+                           "Error: UserForm.options is not valid JSON :" +
+                              l.options
+                        );
+                        req.log(e);
+                     }
+                  }
                });
 
                cb(null, list);

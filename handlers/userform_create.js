@@ -47,7 +47,8 @@ module.exports = {
          process: req.param("process"),
          definition: req.param("definition"),
          roles: req.param("roles"),
-         ui: req.param("ui")
+         ui: req.param("ui"),
+         options: JSON.stringify(req.param("data"))
       };
 
       // make sure the .ui is a string, not an object

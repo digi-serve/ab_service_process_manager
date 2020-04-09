@@ -48,18 +48,8 @@ module.exports = {
          definition: req.param("definition"),
          roles: req.param("roles"),
          ui: req.param("ui"),
-         options: JSON.stringify(req.param("data"))
+         data: req.param("data")
       };
-
-      // make sure the .ui is a string, not an object
-      if (newForm.ui && typeof newForm.ui != "string") {
-         try {
-            newForm.ui = JSON.stringify(newForm.ui);
-         } catch (e) {
-            // that didn't work, so try this:
-            newForm.ui = "" + newForm.ui;
-         }
-      }
 
       var UserForm = req.model("UserForm");
       UserForm.create(newForm)

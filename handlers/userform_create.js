@@ -46,11 +46,21 @@ module.exports = {
          name: req.param("name"),
          process: req.param("process"),
          definition: req.param("definition"),
-         roles: req.param("roles"),
          ui: req.param("ui"),
          data: req.param("data")
       };
 
+      var roles = req.param("roles");
+      if (roles) {
+         newForm.roles = roles;
+      }
+
+      var users = req.param("users");
+      if (users) {
+         newForm.users = users;
+      }
+
+      // perform the create
       var UserForm = req.model("UserForm");
       UserForm.create(newForm)
          .then((form) => {

@@ -96,6 +96,12 @@ module.exports = {
          .catch((err) => {
             req.log(err);
             cb(err);
+
+            if (err.toString().indexOf("MODULE_NOT_FOUND") != -1) {
+               var msg = "UserForm.find() failed with MODULE_NOT_FOUND error:";
+               console.log(msg, err);
+               throw new Error(msg);
+            }
          });
    }
 };

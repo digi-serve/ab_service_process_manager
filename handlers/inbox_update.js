@@ -23,18 +23,9 @@ module.exports = {
     * }
     */
    inputValidation: {
-      user: {
-         required: true,
-         validation: { type: "uuid" }
-      },
-      uuid: {
-         required: true,
-         validation: { type: "uuid" }
-      },
-      response: {
-         required: true,
-         validation: { type: "string" }
-      }
+      user: { string: { uuid: true }, required: true },
+      uuid: { string: { uuid: true }, required: true },
+      response: { string: true, required: true },
    },
 
    /**
@@ -64,5 +55,5 @@ module.exports = {
             req.log(err);
             cb(err);
          });
-   }
+   },
 };

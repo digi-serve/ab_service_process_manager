@@ -14,19 +14,21 @@ module.exports = {
     * define the expected inputs to this service handler:
     * Format:
     * "parameterName" : {
+    *    {joi.fn}   : {bool},  // performs: joi.{fn}();
+    *    {joi.fn}   : {
+    *       {joi.fn1} : true,   // performs: joi.{fn}().{fn1}();
+    *       {joi.fn2} : { options } // performs: joi.{fn}().{fn2}({options})
+    *    }
+    *    // examples:
     *    "required" : {bool},  // default = false
-    *    "validation" : {fn|obj},
-    *                   {fn} a function(value) that returns true/false if
-    *                        the value is valid.
-    *                   {obj}: .type: {string} the data type
-    *                                 [ "string", "uuid", "email", "number", ... ]
+    *
+    *    // custom:
+    *        "validation" : {fn} a function(value, {allValues hash}) that
+    *                       returns { error:{null || {new Error("Error Message")} }, value: {normalize(value)}}
     * }
     */
    inputValidation: {
-      // uuid: {
-      //    required: true,
-      //    validation: { type: "uuid" }
-      // }
+      // uuid: { string: { uuid: true }, required: true }
    },
 
    /**
@@ -47,7 +49,7 @@ module.exports = {
          process: req.param("process"),
          definition: req.param("definition"),
          ui: req.param("ui"),
-         data: req.param("data")
+         data: req.param("data"),
       };
 
       var roles = req.param("roles");
@@ -71,5 +73,5 @@ module.exports = {
             req.log("Error creating UserForm: ", err);
             cb(err);
          });
-   }
+   },
 };

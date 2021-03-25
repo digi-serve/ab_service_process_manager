@@ -3,6 +3,11 @@
  * our Request handler.
  */
 
+const ABBootstrap = require("../AppBuilder/ABBootstrap");
+// {ABBootstrap}
+// responsible for initializing and returning an {ABFactory} that will work
+// with the current tenant for the incoming request.
+
 module.exports = {
    /**
     * Key: the cote message key we respond to.
@@ -43,17 +48,32 @@ module.exports = {
       //
       req.log("in process_manager.userform.status.");
 
-      var uuid = req.param("formID");
+      // get the AB for the current tenant
+      ABBootstrap.init(req)
+         .then((AB) => {
+            var uuid = req.param("formID");
 
-      var UserForm = req.model("UserForm");
-      UserForm.find({ uuid })
-         .then((list) => {
-            if (list && list.length > 0) {
-               cb(null, list[0]);
-            } else {
-               cb(null, null);
-            }
+            AB.objectProcessForm()
+               .model()
+               .find({ uuid })
+               .then((list) => {
+                  if (list && list.length > 0) {
+                     cb(null, list[0]);
+                  } else {
+                     cb(null, null);
+                  }
+               })
+               .catch((err) => {
+                  AB.notify.developer(err, {
+                     context: "process_manager.userform_status",
+                     uuid,
+                  });
+                  cb(err);
+               });
          })
-         .catch(cb);
+         .catch((err) => {
+            req.logError("ERROR:", err);
+            cb(err);
+         });
    },
 };

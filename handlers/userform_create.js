@@ -3,6 +3,11 @@
  * our Request handler.
  */
 
+const ABBootstrap = require("../AppBuilder/ABBootstrap");
+// {ABBootstrap}
+// responsible for initializing and returning an {ABFactory} that will work
+// with the current tenant for the incoming request.
+
 module.exports = {
    /**
     * Key: the cote message key we respond to.
@@ -28,6 +33,14 @@ module.exports = {
     * }
     */
    inputValidation: {
+      name: { string: true, required: true },
+      process: { string: { uuid: true }, required: true },
+      definition: { string: true, required: true },
+      ui: { object: true, required: true },
+      data: { object: true, required: true },
+      roles: { array: true, optional: true },
+      users: { array: true, optional: true },
+
       // uuid: { string: { uuid: true }, required: true }
    },
 
@@ -43,34 +56,46 @@ module.exports = {
       //
       req.log("in process_manager.userform.create");
 
-      // gather the jobData for this request:
-      var newForm = {
-         name: req.param("name"),
-         process: req.param("process"),
-         definition: req.param("definition"),
-         ui: req.param("ui"),
-         data: req.param("data"),
-      };
+      // get the AB for the current tenant
+      ABBootstrap.init(req)
+         .then((AB) => {
+            // gather the jobData for this request:
+            var newForm = {
+               name: req.param("name"),
+               process: req.param("process"),
+               definition: req.param("definition"),
+               ui: req.param("ui"),
+               data: req.param("data"),
+            };
 
-      var roles = req.param("roles");
-      if (roles) {
-         newForm.roles = roles;
-      }
+            var roles = req.param("roles");
+            if (roles) {
+               newForm.roles = roles;
+            }
 
-      var users = req.param("users");
-      if (users) {
-         newForm.users = users;
-      }
+            var users = req.param("users");
+            if (users) {
+               newForm.users = users;
+            }
 
-      // perform the create
-      var UserForm = req.model("UserForm");
-      UserForm.create(newForm)
-         .then((form) => {
-            req.log("created form:", form);
-            cb(null, form);
+            // perform the create
+            AB.objectProcessForm()
+               .model()
+               .create(newForm)
+               .then((form) => {
+                  req.log("created form:", form.uuid);
+                  cb(null, form);
+               })
+               .catch((err) => {
+                  AB.notify.developer(err, {
+                     context: "process_manager.userform_create",
+                     newForm,
+                  });
+                  cb(err);
+               });
          })
          .catch((err) => {
-            req.log("Error creating UserForm: ", err);
+            req.logError("ERROR:", err);
             cb(err);
          });
    },

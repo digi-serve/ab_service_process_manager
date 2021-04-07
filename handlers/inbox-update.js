@@ -12,7 +12,7 @@ module.exports = {
    /**
     * Key: the cote message key we respond to.
     */
-   key: "process_manager.inbox.update",
+   key: "process_manager.inbox-update",
 
    /**
     * inputValidation
@@ -28,7 +28,7 @@ module.exports = {
     * }
     */
    inputValidation: {
-      user: { string: { uuid: true }, required: true },
+      user: { string: true, required: true },
       uuid: { string: { uuid: true }, required: true },
       response: { string: true, required: true },
    },
@@ -42,7 +42,7 @@ module.exports = {
     *        a node style callback(err, results) to send data when job is finished
     */
    fn: function handler(req, cb) {
-      req.log("in process_manager.inbox.update");
+      req.log("in process_manager.inbox-update");
 
       // get the AB for the current tenant
       ABBootstrap.init(req)
@@ -53,16 +53,28 @@ module.exports = {
 
             AB.objectProcessForm()
                .model()
-               .update(
-                  { uuid },
-                  { response, responder: user, status: "processed" }
-               )
+               .update(uuid, { response, responder: user, status: "processed" })
                .then((list) => {
-                  cb(null, list);
+                  // respond to the API now:
+                  cb();
+
+                  // now trigger a Run on the updated process instance
+                  req.serviceRequest(
+                     "process_manager.run",
+                     { instanceID: list.process },
+                     (err /*, results */) => {
+                        if (err) {
+                           req.notify.developer(err, {
+                              context: "process_manager.inbox-update->run()",
+                              instanceID: list.process,
+                           });
+                        }
+                     }
+                  );
                })
                .catch((err) => {
                   AB.notify.developer(err, {
-                     context: "process_manager.inbox.update",
+                     context: "process_manager.inbox-update",
                      user,
                      uuid,
                      response,

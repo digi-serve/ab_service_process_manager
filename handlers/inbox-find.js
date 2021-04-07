@@ -77,7 +77,7 @@ module.exports = {
 
             AB.objectProcessForm()
                .model()
-               .find(cond)
+               .find(cond, req)
                .then((list) => {
                   if (list) {
                      // make sure the .ui field is sent back as an object:

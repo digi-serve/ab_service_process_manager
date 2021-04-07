@@ -85,6 +85,11 @@ module.exports = {
                .then((form) => {
                   req.log("created form:", form.uuid);
                   cb(null, form);
+
+                  // now broadcast the new Inbox Item:
+                  req.broadcast.inboxCreate(users, roles, form).then(() => {
+                     req.performance.log("broadcast.inbox.create");
+                  });
                })
                .catch((err) => {
                   AB.notify.developer(err, {

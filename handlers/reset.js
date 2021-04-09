@@ -44,50 +44,54 @@ module.exports = {
             var taskID = req.param("taskID");
 
             // find which ProcessInstances are being requested
-            AB.objectProcessInstance()
-               .model()
-               .find({ uuid: instanceID }, req)
-               .then((list) => {
-                  var allResets = [];
 
-                  (list || []).forEach((pi) => {
-                     // find the parent process for the instance
-                     var processPI = AB.processByID(pi.processID);
-                     if (!processPI) {
-                        var piError = new Error(
-                           "ProcessInstance could not find parent Process"
-                        );
-                        AB.notify.builder(piError, {
-                           instanceID,
-                           processID: pi.processID,
-                           req,
-                        });
-                        return;
-                     }
+            req.retry(() =>
+               AB.objectProcessInstance()
+                  .model()
+                  .find({ uuid: instanceID }, req)
+            ).then((list) => {
+               var allResets = [];
 
-                     // perform the reset()
-                     allResets.push(processPI.instanceReset(pi, taskID, req));
-                  });
-
-                  Promise.all(allResets)
-                     .then(() => {
-                        req.log(
-                           `reset ${allResets.length} task${
-                              allResets.length != 1 ? "s" : ""
-                           }`
-                        );
-                        cb(null, allResets.length);
-                     })
-                     .catch((err) => {
-                        AB.notify.developer(err, {
-                           context: "process_manager.reset",
-                           instanceID,
-                           taskID,
-                           req,
-                        });
-                        cb(err);
+               (list || []).forEach((pi) => {
+                  // find the parent process for the instance
+                  var processPI = AB.processByID(pi.processID);
+                  if (!processPI) {
+                     var piError = new Error(
+                        "ProcessInstance could not find parent Process"
+                     );
+                     AB.notify.builder(piError, {
+                        instanceID,
+                        processID: pi.processID,
+                        req,
                      });
+                     return;
+                  }
+
+                  // perform the reset()
+                  allResets.push(
+                     req.retry(() => processPI.instanceReset(pi, taskID, req))
+                  );
                });
+
+               Promise.all(allResets)
+                  .then(() => {
+                     req.log(
+                        `reset ${allResets.length} task${
+                           allResets.length != 1 ? "s" : ""
+                        }`
+                     );
+                     cb(null, allResets.length);
+                  })
+                  .catch((err) => {
+                     AB.notify.developer(err, {
+                        context: "process_manager.reset",
+                        instanceID,
+                        taskID,
+                        req,
+                     });
+                     cb(err);
+                  });
+            });
          })
          .catch((err) => {
             req.logError("ERROR:", err);

@@ -48,7 +48,8 @@ module.exports = {
             AB.processes().forEach((p) => {
                var t = p.taskForTriggerKey(key);
                if (t) {
-                  allTriggers.push(t.trigger(data, req));
+                  // allTriggers.push(retryTrigger(t, data, req));
+                  allTriggers.push(req.retry(() => t.trigger(data, req)));
                }
             });
 
@@ -62,11 +63,17 @@ module.exports = {
                   cb(null, allTriggers.length);
                })
                .catch((err) => {
+                  req.notify.developer(err, {
+                     context: "Process->Trigger() : error during trigger.",
+                  });
                   cb(err);
                });
          })
          .catch((err) => {
-            req.logError("ERROR:", err);
+            req.notify.developer(err, {
+               context:
+                  "Service:process_manager.trigger: Error initializing ABFactory",
+            });
             cb(err);
          });
    },

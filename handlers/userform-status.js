@@ -53,9 +53,7 @@ module.exports = {
          .then((AB) => {
             var uuid = req.param("formID");
 
-            AB.objectProcessForm()
-               .model()
-               .find({ uuid })
+            req.retry(() => AB.objectProcessForm().model().find({ uuid }))
                .then((list) => {
                   if (list && list.length > 0) {
                      cb(null, list[0]);
@@ -72,7 +70,10 @@ module.exports = {
                });
          })
          .catch((err) => {
-            req.logError("ERROR:", err);
+            req.notify.developer(err, {
+               context:
+                  "Service:process_manager.userform.status: Error initializing ABFactory",
+            });
             cb(err);
          });
    },

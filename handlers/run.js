@@ -42,9 +42,11 @@ module.exports = {
             var instanceID = req.param("instanceID");
 
             // find which instances are being requested
-            AB.objectProcessInstance()
-               .model()
-               .find({ uuid: instanceID }, req)
+            req.retry(() =>
+               AB.objectProcessInstance()
+                  .model()
+                  .find({ uuid: instanceID }, req)
+            )
                .then((list) => {
                   var allRuns = [];
 
@@ -78,16 +80,29 @@ module.exports = {
                      })
                      .catch((err) => {
                         AB.notify.developer(err, {
-                           context: "process_manager.run",
+                           context: "process_manager.run.allRuns",
                            instanceID,
                            req,
                         });
                         cb(err);
                      });
+               })
+               .catch((err) => {
+                  req.notify.developer(err, {
+                     context:
+                        "Service:process_manager.run: could not find ProcessInstance to run",
+                     instanceID,
+                     req,
+                  });
+                  cb(err);
                });
          })
          .catch((err) => {
-            req.logError("ERROR:", err);
+            req.notify.developer(err, {
+               context:
+                  "Service:process_manager.run: Error initializing ABFactory",
+               req,
+            });
             cb(err);
          });
    },

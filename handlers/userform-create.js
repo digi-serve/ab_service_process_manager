@@ -79,9 +79,8 @@ module.exports = {
             }
 
             // perform the create
-            AB.objectProcessForm()
-               .model()
-               .create(newForm)
+
+            req.retry(() => AB.objectProcessForm().model().create(newForm))
                .then((form) => {
                   req.log("created form:", form.uuid);
                   cb(null, form);
@@ -100,7 +99,10 @@ module.exports = {
                });
          })
          .catch((err) => {
-            req.logError("ERROR:", err);
+            req.notify.developer(err, {
+               context:
+                  "Service:process_manager.run: Error initializing ABFactory",
+            });
             cb(err);
          });
    },

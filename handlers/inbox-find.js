@@ -75,9 +75,7 @@ module.exports = {
                cond.roles = roles;
             }
 
-            AB.objectProcessForm()
-               .model()
-               .find(cond, req)
+            req.retry(() => AB.objectProcessForm().model().find(cond, req))
                .then((list) => {
                   if (list) {
                      // make sure the .ui field is sent back as an object:
@@ -111,7 +109,7 @@ module.exports = {
                   }
                })
                .catch((err) => {
-                  AB.notify.developer(err, {
+                  req.notify.developer(err, {
                      context: "process_manager.inbox.find",
                      users,
                      roles,
@@ -128,7 +126,10 @@ module.exports = {
                });
          })
          .catch((err) => {
-            req.logError("ERROR:", err);
+            req.notify.developer(err, {
+               context:
+                  "Service:process_manager.inbox.find: Error initializing Boostrap",
+            });
             cb(err);
          });
    },

@@ -51,9 +51,13 @@ module.exports = {
             var uuid = req.param("uuid");
             var response = req.param("response");
 
-            AB.objectProcessForm()
-               .model()
-               .update(uuid, { response, responder: user, status: "processed" })
+            req.retry(() =>
+               AB.objectProcessForm().model().update(uuid, {
+                  response,
+                  responder: user,
+                  status: "processed",
+               })
+            )
                .then((list) => {
                   // respond to the API now:
                   cb();
@@ -73,7 +77,7 @@ module.exports = {
                   );
                })
                .catch((err) => {
-                  AB.notify.developer(err, {
+                  req.notify.developer(err, {
                      context: "process_manager.inbox-update",
                      user,
                      uuid,
@@ -83,7 +87,10 @@ module.exports = {
                });
          })
          .catch((err) => {
-            req.logError("ERROR:", err);
+            req.notify.developer(err, {
+               context:
+                  "Service:process_manager.inbox-update: Error initializing Boostrap",
+            });
             cb(err);
          });
    },

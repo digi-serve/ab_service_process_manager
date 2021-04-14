@@ -128,7 +128,7 @@ module.exports = {
          .catch((err) => {
             req.notify.developer(err, {
                context:
-                  "Service:process_manager.inbox.find: Error initializing Boostrap",
+                  "Service:process_manager.inbox.find: Error initializing ABFactory",
             });
             cb(err);
          });

@@ -60,7 +60,7 @@ module.exports = {
                if (!p) return;
       
                let triggerTimers = p.elements(
-                  (e) => e instanceof ABProcessTriggerTimer
+                  (e) => e instanceof ABProcessTriggerTimer && e.isEnabled
                );
       
                if (triggerTimers && triggerTimers.length) {

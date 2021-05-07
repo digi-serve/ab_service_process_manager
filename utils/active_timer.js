@@ -6,7 +6,7 @@ module.exports = {
 
 
     start: (req, element) => {
-        if (element == null) return;
+        if (element == null || !element.isEnabled) return;
 
         let tenantID = req.tenantID();
         if (TIMER_POOLS[tenantID] == null) {

@@ -68,11 +68,13 @@ module.exports = {
 
             // build our condition
             var cond = { status: "pending" };
+
             if (users.length) {
-               cond.users = users;
+               cond.or = [{ users }];
             }
             if (roles.length) {
-               cond.roles = roles;
+               cond.or = cond.or || [];
+               cond.or.push({ roles });
             }
 
             req.retry(() => AB.objectProcessForm().model().find(cond, req))
@@ -116,13 +118,6 @@ module.exports = {
                      req,
                   });
                   cb(err);
-
-                  // if (err.toString().indexOf("MODULE_NOT_FOUND") != -1) {
-                  //    var msg =
-                  //       "UserForm.find() failed with MODULE_NOT_FOUND error:";
-                  //    console.log(msg, err);
-                  //    throw new Error(msg);
-                  // }
                });
          })
          .catch((err) => {

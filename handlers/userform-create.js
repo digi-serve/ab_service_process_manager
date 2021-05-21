@@ -2,7 +2,7 @@
  * userform.create
  * our Request handler.
  */
-
+const async = require("async");
 const ABBootstrap = require("../AppBuilder/ABBootstrap");
 // {ABBootstrap}
 // responsible for initializing and returning an {ABFactory} that will work
@@ -53,9 +53,6 @@ module.exports = {
     *        a node style callback(err, results) to send data when job is finished
     */
    fn: function handler(req, cb) {
-      //
-      req.log("in process_manager.userform.create");
-
       // get the AB for the current tenant
       ABBootstrap.init(req)
          .then((AB) => {
@@ -74,29 +71,88 @@ module.exports = {
             }
 
             var users = req.param("users");
-            if (users) {
+            if (users && users.length > 0) {
                newForm.users = users;
             }
 
+            // NOTE: Transition checks:
+            // current v1 AppBuilder designer saves user.uuid for the users
+            // in our processParticipants.  in v2, we need the .username
+            // values.
+            // Once ABDesigner is ported to v2, we can simplify these checks:
+            //
+            async.series(
+               [
+                  (done) => {
+                     // Make sure we have correct values for our users
+                     if (!newForm.users) {
+                        return done();
+                     }
+
+                     // Prevent SiteUser.uuid(s) from being used.
+                     req.retry(() =>
+                        AB.objectUser()
+                           .model()
+                           .find({
+                              or: [
+                                 { uuid: newForm.users },
+                                 { username: newForm.users },
+                              ],
+                           })
+                     )
+                        .then((usersFound) => {
+                           if (usersFound.length == 0) {
+                              req.notify.builder(
+                                 new Error(
+                                    "no matching users for provided settings"
+                                 ),
+                                 {
+                                    context:
+                                       "userform-create: verify valid users",
+                                    newFormName: newForm.name,
+                                    newFormprocess: newForm.process,
+                                    users,
+                                    roles,
+                                 }
+                              );
+                           }
+                           newForm.users = (usersFound || []).map(
+                              (u) => u.username
+                           );
+                           done();
+                        })
+                        .catch(done);
+                  },
+                  (done) => {
+                     req.retry(() =>
+                        AB.objectProcessForm().model().create(newForm)
+                     )
+                        .then((form) => {
+                           req.log("created form:", form.uuid);
+                           cb(null, form);
+
+                           // now broadcast the new Inbox Item:
+                           req.broadcast
+                              .inboxCreate(users, roles, form)
+                              .then(() => {
+                                 req.performance.log("broadcast.inbox.create");
+                              });
+                        })
+                        .catch((err) => {
+                           AB.notify.developer(err, {
+                              context: "process_manager.userform_create",
+                              newForm,
+                           });
+                           done(err);
+                        });
+                  },
+               ],
+               (err, result) => {
+                  cb(err, result);
+               }
+            );
+
             // perform the create
-
-            req.retry(() => AB.objectProcessForm().model().create(newForm))
-               .then((form) => {
-                  req.log("created form:", form.uuid);
-                  cb(null, form);
-
-                  // now broadcast the new Inbox Item:
-                  req.broadcast.inboxCreate(users, roles, form).then(() => {
-                     req.performance.log("broadcast.inbox.create");
-                  });
-               })
-               .catch((err) => {
-                  AB.notify.developer(err, {
-                     context: "process_manager.userform_create",
-                     newForm,
-                  });
-                  cb(err);
-               });
          })
          .catch((err) => {
             req.notify.developer(err, {

@@ -31,8 +31,11 @@ module.exports = {
                key: element.triggerKey,
                data: {}
             },
-            () => {
-               req.log("Timer started");
+            (err) => {
+               if (err) {
+                  return req.notify.developer(err, { context:"failed process trigger",  id: element.id, key: element.triggerKey});
+               }
+               req.log("Timer Started");
             }
          );
       });

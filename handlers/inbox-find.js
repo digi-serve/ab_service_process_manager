@@ -86,21 +86,28 @@ module.exports = {
                            try {
                               l.ui = JSON.parse(l.ui);
                            } catch (e) {
-                              req.log(
-                                 "Error: UserForm.ui is not valid JSON :" + l.ui
-                              );
+                              let msg = `Error: UserForm[${l.uuid}].ui is not valid JSON `;
+                              req.log(msg);
                               req.log(e);
+                              req.notify.builder(e, {
+                                 context: msg,
+                                 uuid: l.uuid,
+                                 ui: l.ui,
+                              });
                            }
                         }
                         if (l.options && typeof l.options == "string") {
                            try {
                               l.data = JSON.parse(l.options);
                            } catch (e) {
-                              req.log(
-                                 "Error: UserForm.options is not valid JSON :" +
-                                    l.options
-                              );
+                              let msg = `Error: UserForm[${l.uuid}].options is not valid JSON `;
+                              req.log(msg);
                               req.log(e);
+                              req.notify.builder(e, {
+                                 context: msg,
+                                 uuid: l.uuid,
+                                 options: l.options,
+                              });
                            }
                         }
                      });

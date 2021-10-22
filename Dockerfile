@@ -11,7 +11,7 @@
 
 FROM digiserve/service-cli:develop
 
-RUN git clone --recursive https://github.com/appdevdesigns/ab_service_process_manager.git app && cd app && git checkout develop && git submodule update --recursive && npm install
+RUN git clone --recursive https://github.com/digi-serve/ab_service_process_manager.git app && cd app && git checkout develop && git submodule update --recursive && npm install
 
 WORKDIR /app
 

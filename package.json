@@ -26,7 +26,8 @@
     "devBuild:win32": "docker run -it --mount type=bind,source=%cd%,target=/app -w /app node /bin/bash -c \"npm i --force && cd AppBuilder && npm i --force\"",
     "devInstall:win32": "docker run -it --mount type=bind,source=%cd%,target=/app -w /app node bash",
     "devBuild:darwin:linux": "docker run -it --mount type=bind,source=\"$(pwd)\",target=/app -w /app node /bin/bash -c \"npm i --force && cd AppBuilder && npm i --force\"",
-    "devInstall:darwin:linux": "docker run -it --mount type=bind,source=\"$(pwd)\",target=/app -w /app node bash"
+    "devInstall:darwin:linux": "docker run -it --mount type=bind,source=\"$(pwd)\",target=/app -w /app node bash",
+    "submoduleNPMInstall": "cd AppBuilder && npm i --force"
   },
   "devDependencies": {
     "chai": "^4.3.4",

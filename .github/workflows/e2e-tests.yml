@@ -17,7 +17,7 @@ jobs:
           submodules: recursive
           path: ab_service_process_manager
       - name: Install AppBuilder
-        uses: digi-serve/ab-install-action@V1
+        uses: digi-serve/ab-install-action@v1
       - name: Check out kitchen-sink tests
         uses: actions/checkout@v2
         with:

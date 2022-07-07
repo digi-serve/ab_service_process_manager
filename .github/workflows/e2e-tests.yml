@@ -1,0 +1,41 @@
+name: E2E Tests
+on:
+  # Run on any commit to the #master branch
+  push:
+    branches: [master, develop]
+  # Run on pull requests into the #master branch
+  pull_request:
+    branches: [master, develop]
+  jobs:
+    cypress-test:
+      name: Run Tests
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v3
+          with:
+            submodules: recursive
+            path: ab_service_process_manager
+        - name: Install AppBuilder
+          uses: digi-serve/ab-install-action@V1
+        - name: Check out kitchen-sink tests
+          uses: actions/checkout@v2
+          with:
+            repository: digi-serve/kitchensink_app
+            path: AppBuilder/test/e2e/cypress/integration/kitchensink_app
+        - name: Run Cypress Tests
+          uses: cypress-io/github-action@v2
+          with:
+            working-directory: ./AppBuilder
+            project: ./test/e2e
+            config: baseUrl=http://localhost:80,responseTimeout=100000,defaultCommandTimeout=24000,retries=2
+            wait-on: "http://localhost:8080"
+            wait-on-timeout: 300
+            env: stack=ab
+            install: false
+        - name: Save Screenshots 
+          uses: actions/upload-artifact@v2
+            if: failure()
+            with:
+              name: cypress-screenshots
+              path: ./AppBuilder/test/e2e/cypress/screenshots

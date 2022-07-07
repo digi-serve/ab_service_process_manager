@@ -35,7 +35,7 @@ on:
             install: false
         - name: Save Screenshots 
           uses: actions/upload-artifact@v2
-            if: failure()
-            with:
-              name: cypress-screenshots
-              path: ./AppBuilder/test/e2e/cypress/screenshots
+          if: failure()
+          with:
+            name: cypress-screenshots
+            path: ./AppBuilder/test/e2e/cypress/screenshots

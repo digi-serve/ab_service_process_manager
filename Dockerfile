@@ -5,8 +5,8 @@
 ##
 ## Docker Commands:
 ## ---------------
-## $ docker build -t digiserve/ab-process-manager:develop .
-## $ docker push digiserve/ab-process-manager:develop
+## $ docker build -t digiserve/ab-process-manager:master .
+## $ docker push digiserve/ab-process-manager:master
 ##
 
 ARG BRANCH=master

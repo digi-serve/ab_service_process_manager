@@ -110,39 +110,40 @@ module.exports = {
                );
             }
             newForm.users = usersFound.map((u) => u.username);
+         }
 
-            try {
-               const formModel = await AB.objectProcessForm().model();
-               // create the form
-               let form = await req.retry(() => formModel.create(newForm));
+         try {
+            const formModel = await AB.objectProcessForm().model();
+            // create the form
+            let form = await req.retry(() => formModel.create(newForm));
 
-               // If this is an external task with a url we need to add this
-               // form's uuid as a query param (task=form.uuid) this will allow
-               // the external site to report the form is done using
-               // POST /process/external?uuid=form.uuid
-               if (form.data.url) {
-                  const url = `${form.data.url}${
-                     form.data.url.includes("?") ? "&" : "?"
-                  }task=${form.uuid}`;
-                  const dataClone = { ...form.data };
-                  dataClone.url = url;
-                  form = await req.retry(() =>
-                     formModel.update(form.uuid, { data: dataClone })
-                  );
-               }
-
-               req.log("created form:", form.uuid);
-               cb(null, form);
-
-               // now broadcast the new Inbox Item:
-               await req.broadcast.inboxCreate(users, roles, form);
-               req.performance.log("broadcast.inbox.create");
-            } catch (err) {
-               AB.notify.developer(err, {
-                  context: "process_manager.userform_create",
-                  newForm,
-               });
+            // If this is an external task with a url we need to add this
+            // form's uuid as a query param (task=form.uuid) this will allow
+            // the external site to report the form is done using
+            // POST /process/external?uuid=form.uuid
+            if (form.data.url) {
+               const url = `${form.data.url}${
+                  form.data.url.includes("?") ? "&" : "?"
+               }task=${form.uuid}`;
+               const dataClone = { ...form.data };
+               dataClone.url = url;
+               form = await req.retry(() =>
+                  formModel.update(form.uuid, { data: dataClone })
+               );
             }
+
+            req.log("created form:", form.uuid);
+            cb(null, form);
+
+            // now broadcast the new Inbox Item:
+            await req.broadcast.inboxCreate(users, roles, form);
+            req.performance.log("broadcast.inbox.create");
+         } catch (err) {
+            AB.notify.developer(err, {
+               context: "process_manager.userform_create",
+               newForm,
+            });
+            cb(err);
          }
       } catch (err) {
          req.notify.developer(err, {

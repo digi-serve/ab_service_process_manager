@@ -112,10 +112,24 @@ module.exports = {
             newForm.users = usersFound.map((u) => u.username);
 
             try {
+               const formModel = await AB.objectProcessForm().model();
                // create the form
-               const form = await req.retry(() =>
-                  AB.objectProcessForm().model().create(newForm)
-               );
+               let form = await req.retry(() => formModel.create(newForm));
+
+               // If this is an external task with a url we need to add this
+               // form's uuid as a query param (task=form.uuid) this will allow
+               // the external site to report the form is done using
+               // POST /process/external?uuid=form.uuid
+               if (form.data.url) {
+                  const url = `${form.data.url}${
+                     form.data.url.includes("?") ? "&" : "?"
+                  }task=${form.uuid}`;
+                  const dataClone = { ...form.data };
+                  dataClone.url = url;
+                  form = await req.retry(() =>
+                     formModel.update(form.uuid, { data: dataClone })
+                  );
+               }
 
                req.log("created form:", form.uuid);
                cb(null, form);

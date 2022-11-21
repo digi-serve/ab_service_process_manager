@@ -2,7 +2,6 @@
  * userform.create
  * our Request handler.
  */
-const async = require("async");
 const ABBootstrap = require("../AppBuilder/ABBootstrap");
 // {ABBootstrap}
 // responsible for initializing and returning an {ABFactory} that will work
@@ -52,114 +51,91 @@ module.exports = {
     * @param {fn} cb
     *        a node style callback(err, results) to send data when job is finished
     */
-   fn: function handler(req, cb) {
-      // get the AB for the current tenant
-      ABBootstrap.init(req)
-         .then((AB) => {
-            // gather the jobData for this request:
-            var newForm = {
-               name: req.param("name"),
-               process: req.param("process"),
-               definition: req.param("definition"),
-               ui: req.param("ui"),
-               data: req.param("data"),
-            };
+   fn: async function handler(req, cb) {
+      try {
+         // get the AB for the current tenant
+         const AB = await ABBootstrap.init(req);
 
-            var roles = req.param("roles");
-            if (roles) {
-               newForm.roles = roles;
+         // gather the jobData for this request:
+         const newForm = {
+            name: req.param("name"),
+            process: req.param("process"),
+            definition: req.param("definition"),
+            ui: req.param("ui"),
+            data: req.param("data"),
+         };
+
+         const roles = req.param("roles");
+         if (roles) {
+            newForm.roles = roles;
+         }
+
+         const users = req.param("users");
+         if (users && users.length > 0) {
+            newForm.users = users;
+         }
+
+         // NOTE: Transition checks:
+         // current v1 AppBuilder designer saves user.uuid for the users
+         // in our processParticipants.  in v2, we need the .username
+         // values.
+         // Once ABDesigner is ported to v2, we can simplify these checks:
+         //
+
+         // Make sure we have correct values for our users
+         if (newForm.users) {
+            // Prevent SiteUser.uuid(s) from being used.
+            const usersFound =
+               (await req.retry(() =>
+                  AB.objectUser()
+                     .model()
+                     .find({
+                        or: [
+                           { uuid: newForm.users },
+                           { username: newForm.users },
+                        ],
+                     })
+               )) ?? [];
+
+            if (usersFound.length == 0) {
+               req.notify.builder(
+                  new Error("no matching users for provided settings"),
+                  {
+                     context: "userform-create: verify valid users",
+                     newFormName: newForm.name,
+                     newFormprocess: newForm.process,
+                     users,
+                     roles,
+                  }
+               );
             }
+            newForm.users = usersFound.map((u) => u.username);
 
-            var users = req.param("users");
-            if (users && users.length > 0) {
-               newForm.users = users;
+            try {
+               // create the form
+               const form = await req.retry(() =>
+                  AB.objectProcessForm().model().create(newForm)
+               );
+
+               req.log("created form:", form.uuid);
+               cb(null, form);
+
+               // now broadcast the new Inbox Item:
+               await req.broadcast.inboxCreate(users, roles, form);
+               req.performance.log("broadcast.inbox.create");
+            } catch (err) {
+               AB.notify.developer(err, {
+                  context: "process_manager.userform_create",
+                  newForm,
+               });
             }
-
-            // NOTE: Transition checks:
-            // current v1 AppBuilder designer saves user.uuid for the users
-            // in our processParticipants.  in v2, we need the .username
-            // values.
-            // Once ABDesigner is ported to v2, we can simplify these checks:
-            //
-            async.series(
-               [
-                  (done) => {
-                     // Make sure we have correct values for our users
-                     if (!newForm.users) {
-                        return done();
-                     }
-
-                     // Prevent SiteUser.uuid(s) from being used.
-                     req.retry(() =>
-                        AB.objectUser()
-                           .model()
-                           .find({
-                              or: [
-                                 { uuid: newForm.users },
-                                 { username: newForm.users },
-                              ],
-                           })
-                     )
-                        .then((usersFound) => {
-                           if (usersFound.length == 0) {
-                              req.notify.builder(
-                                 new Error(
-                                    "no matching users for provided settings"
-                                 ),
-                                 {
-                                    context:
-                                       "userform-create: verify valid users",
-                                    newFormName: newForm.name,
-                                    newFormprocess: newForm.process,
-                                    users,
-                                    roles,
-                                 }
-                              );
-                           }
-                           newForm.users = (usersFound || []).map(
-                              (u) => u.username
-                           );
-                           done();
-                        })
-                        .catch(done);
-                  },
-                  (done) => {
-                     req.retry(() =>
-                        AB.objectProcessForm().model().create(newForm)
-                     )
-                        .then((form) => {
-                           req.log("created form:", form.uuid);
-                           cb(null, form);
-
-                           // now broadcast the new Inbox Item:
-                           req.broadcast
-                              .inboxCreate(users, roles, form)
-                              .then(() => {
-                                 req.performance.log("broadcast.inbox.create");
-                              });
-                        })
-                        .catch((err) => {
-                           AB.notify.developer(err, {
-                              context: "process_manager.userform_create",
-                              newForm,
-                           });
-                           done(err);
-                        });
-                  },
-               ],
-               (err, result) => {
-                  cb(err, result);
-               }
-            );
-
-            // perform the create
-         })
-         .catch((err) => {
-            req.notify.developer(err, {
-               context:
-                  "Service:process_manager.run: Error initializing ABFactory",
-            });
-            cb(err);
+         }
+      } catch (err) {
+         req.notify.developer(err, {
+            context:
+               "Service:process_manager.run: Error initializing ABFactory",
          });
+         cb(err);
+      }
    },
 };

@@ -22,7 +22,7 @@ module.exports = {
    inputValidation: {
       key: { string: true, required: true },
       data: { object: true, required: true },
-      requestId: { string: true, required: false }, // Needed to prevent duplicates if the request is retried
+      requestID: { string: true, optional: true }, // Needed to prevent duplicates if the request is retried
       // email: { string: { email: true }, optional: true },
    },
 
@@ -48,9 +48,9 @@ module.exports = {
             AB.processes().forEach((p) => {
                var t = p.taskForTriggerKey(key);
                if (t) {
-                  const requestId = req.param("requestId");
-                  const instanceKey = requestId
-                     ? `${requestId}.${t.id}`
+                  const requestID = req.param("requestID");
+                  const instanceKey = requestID
+                     ? `${requestID}.${t.id}`
                      : undefined;
                   // allTriggers.push(retryTrigger(t, data, req));
                   allTriggers.push(

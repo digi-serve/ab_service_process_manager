@@ -8,11 +8,11 @@
   "dependencies": {
     "ab-utils": "npm:@digiserve/ab-utils@^1.2.1",
     "cote": "^1.0.2",
-    "knex": "^0.95.4",
+    "knex": "^0.95.15",
     "lodash": "^4.17.21",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "node-cron": "^3.0.0",
-    "objection": "^2.2.15",
+    "objection": "github:Hiro-Nakamura/objection.js#fixDBErrors",
     "serialize-error": "^8.0.1",
     "xml-js": "^1.6.11"
   },

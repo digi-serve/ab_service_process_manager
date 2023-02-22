@@ -2,7 +2,32 @@ const cron = require("node-cron");
 
 var TIMER_POOLS = {};
 
-module.exports = {
+var TIMER = {
+   /**
+    * @function isRunning
+    * Return true/false if the given ABProcessTrigger.id is running.
+    *
+    * @param {uuid} id - the id of ABProcessTriggerTimer
+    * @return {bool}
+    */
+   isRunning: (req, id) => {
+      let tenantID = req.tenantID();
+
+      if (
+         id == null ||
+         TIMER_POOLS[tenantID] == null ||
+         TIMER_POOLS[tenantID][id] == null
+      )
+         return false;
+
+      return true;
+   },
+
+   /**
+    * @function start
+    * Start the execution of the given ABProcessTriggerTimer.
+    * @param {ABProcessTriggerTimer} element
+    */
    start: (req, element) => {
       if (element == null || !element.isEnabled) return;
 
@@ -13,7 +38,7 @@ module.exports = {
 
       // Stop
       if (TIMER_POOLS[tenantID][element.id] != null) {
-         this.stop(req, element.id);
+         TIMER.stop(req, element.id);
       }
 
       let cronExpression = element.getCronExpression();
@@ -29,11 +54,15 @@ module.exports = {
             "process_manager.trigger",
             {
                key: element.triggerKey,
-               data: {}
+               data: {},
             },
             (err) => {
                if (err) {
-                  return req.notify.developer(err, { context:"failed process trigger",  id: element.id, key: element.triggerKey});
+                  return req.notify.developer(err, {
+                     context: "failed process trigger",
+                     id: element.id,
+                     key: element.triggerKey,
+                  });
                }
                req.log("Timer Started");
             }
@@ -43,7 +72,7 @@ module.exports = {
 
    /**
     * @function stop
-    *
+    * Stop the execution of the given ABProcessTriggerTimer.
     * @param {uuid} elementId - the id of ABProcessTriggerTimer
     */
    stop: (req, elementId) => {
@@ -59,6 +88,7 @@ module.exports = {
       req.log(`::: Stop CRON job - ${elementId}`);
       TIMER_POOLS[tenantID][elementId].stop();
       delete TIMER_POOLS[tenantID][elementId];
-   }
+   },
 };
 
+module.exports = TIMER;

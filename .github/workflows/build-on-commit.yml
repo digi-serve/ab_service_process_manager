@@ -5,6 +5,8 @@ on:
       - master
       - develop
 jobs:
+  e2e-tests:
+    uses: ./.github/workflows/e2e-tests.yml
   publish:
     name: Push image to Docker Hub
     runs-on: ubuntu-latest

@@ -1,13 +1,8 @@
 name: E2E Tests
 on:
-  # Run on any commit to the #master branch
-  push:
-    branches: [master, develop]
-  # Run on pull requests into the #master branch
-  pull_request:
-    branches: [master, develop]
+   workflow_call:
 jobs:
-  cypress-test:
+  e2e-tests:
     name: Run Tests
     runs-on: ubuntu-latest
     env:
@@ -41,3 +36,9 @@ jobs:
         with:
           name: cypress-screenshots
           path: ./AppBuilder/test/e2e/cypress/screenshots
+      - name: Save Service Logs
+        uses: actions/upload-artifact@v2
+           if: failure()
+           with:
+              name: ABServices.log
+              path: ./ab/logs/ABServices.log

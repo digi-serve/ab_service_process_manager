@@ -37,6 +37,7 @@ module.exports = {
       definition: { string: true, required: true },
       ui: { object: true, required: true },
       data: { object: true, required: true },
+      scopeQuery: { object: true, optional: true },
       roles: { array: true, optional: true },
       users: { array: true, optional: true },
 
@@ -63,6 +64,7 @@ module.exports = {
             definition: req.param("definition"),
             ui: req.param("ui"),
             data: req.param("data"),
+            scopeQuery: req.param("scopeQuery"),
          };
 
          const roles = req.param("roles");
@@ -104,6 +106,7 @@ module.exports = {
                      context: "userform-create: verify valid users",
                      newFormName: newForm.name,
                      newFormprocess: newForm.process,
+                     scopeOuery: newForm.scopeQuery,
                      users,
                      roles,
                   }
@@ -134,6 +137,8 @@ module.exports = {
 
             req.log("created form:", form.uuid);
             cb(null, form);
+
+            if (newForm.scopeQuery) return;
 
             // now broadcast the new Inbox Item:
             await req.broadcast.inboxCreate(users, roles, form);

@@ -57,8 +57,8 @@ module.exports = {
             const ID = req.param("uuid");
 
             /*
-            // Question: should we check to see if timer.isEnabled ?
-            // like this:
+            // If we deice to issue an error if timer doesn't exist, we could
+            // do this:
 
             let timer = null;
 
@@ -78,7 +78,8 @@ module.exports = {
                req.notify.developer(errNotFound, { ID });
             }
             */
-            // or should we just stop() it anyway:
+
+            // but for now, just stop:
             ActiveTimer.stop(req, ID);
 
             cb(null, { status: "success" });

@@ -41,57 +41,23 @@ module.exports = {
     * @param {fn} cb
     *        a node style callback(err, results) to send data when job is finished
     */
-   fn: function handler(req, cb) {
+   fn: async function handler(req, cb) {
       req.log("in process_manager.external");
 
-      // get the AB for the current tenant
-      ABBootstrap.init(req)
-         .then((AB) => {
-            var user = req.param("user");
-            var uuid = req.param("uuid");
-            var response = req.param("response");
+      try {
+         // get the AB for the current tenant
+         const AB = await ABBootstrap.init(req);
+         const uuid = req.param("uuid");
+         const roles = await AB.objectRole().model().findAll();
 
-            req.retry(() =>
-               AB.objectProcessForm().model().update(uuid, {
-                  response,
-                  responder: user,
-                  status: "processed",
-               })
-            )
-               .then((list) => {
-                  // respond to the API now:
-                  cb(null, { success: true });
-
-                  // now trigger a Run on the updated process instance
-                  req.serviceRequest(
-                     "process_manager.run",
-                     { instanceID: list.process },
-                     (err /*, results */) => {
-                        if (err) {
-                           req.notify.developer(err, {
-                              context: "process_manager.external->run()",
-                              instanceID: list.process,
-                           });
-                        }
-                     }
-                  );
-               })
-               .catch((err) => {
-                  req.notify.developer(err, {
-                     context: "process_manager.external",
-                     user,
-                     uuid,
-                     response,
-                  });
-                  cb(err);
-               });
-         })
-         .catch((err) => {
-            req.notify.developer(err, {
-               context:
-                  "Service:process_manager.external: Error initializing Boostrap",
-            });
-            cb(err);
+         req.broadcast.inboxUpdate(null, roles, { uuid });
+         cb();
+      } catch (err) {
+         req.notify.developer(err, {
+            context:
+               "Service:process_manager.external: Error initializing Boostrap",
          });
+         cb(err);
+      }
    },
 };

@@ -2,7 +2,7 @@
 // process_manager
 // (AppBuilder) a micro service to manage our process tasks
 //
-const AB = require("ab-utils");
+const AB = require("@digiserve/ab-utils");
 
 var controller = AB.controller("process_manager");
 

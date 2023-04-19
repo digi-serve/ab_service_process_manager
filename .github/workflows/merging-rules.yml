@@ -33,9 +33,10 @@ jobs:
            env:
               PR_URL: ${{github.event.pull_request.html_url}}
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+         - name: Authenticate cli with a PAT
+           run: echo "${{ secrets.DEPENDABOT_TOKEN }}" | gh auth login --with-token
          - name: Enable auto-merge for Dependabot PRs
            if: steps.approve.outputs.isapprove == '1'
            run: gh pr merge --auto --merge "$PR_URL"
            env:
               PR_URL: ${{github.event.pull_request.html_url}}
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

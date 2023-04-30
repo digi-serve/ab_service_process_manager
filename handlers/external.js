@@ -79,18 +79,17 @@ module.exports = {
 
          cb();
          req.broadcast.inboxUpdate([user], roles, list);
-         req.serviceRequest(
-            "process_manager.run",
-            { instanceID: list.process },
-            (err /*, results */) => {
-               if (err) {
-                  req.notify.developer(err, {
-                     context: "process_manager.external->run()",
-                     instanceID: list.process,
-                  });
-               }
-            }
-         );
+
+         try {
+            await req.serviceRequest("process_manager.run", {
+               instanceID: list.process,
+            });
+         } catch (err2) {
+            req.notify.developer(err2, {
+               context: "process_manager.external->run()",
+               instanceID: list.process,
+            });
+         }
       } catch (err) {
          req.notify.developer(err, errParams);
          cb(err);

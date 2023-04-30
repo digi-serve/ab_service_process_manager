@@ -297,7 +297,6 @@ module.exports = {
                context: "process_manager.inbox.find",
                users,
                roles,
-               req,
             });
             cb(err);
          }

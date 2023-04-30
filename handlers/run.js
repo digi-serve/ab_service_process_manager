@@ -82,7 +82,6 @@ module.exports = {
                         AB.notify.developer(err, {
                            context: "process_manager.run.allRuns",
                            instanceID,
-                           req,
                         });
                         cb(err);
                      });
@@ -92,7 +91,6 @@ module.exports = {
                      context:
                         "Service:process_manager.run: could not find ProcessInstance to run",
                      instanceID,
-                     req,
                   });
                   cb(err);
                });
@@ -101,7 +99,6 @@ module.exports = {
             req.notify.developer(err, {
                context:
                   "Service:process_manager.run: Error initializing ABFactory",
-               req,
             });
             cb(err);
          });

@@ -87,7 +87,6 @@ module.exports = {
                         context: "process_manager.reset",
                         instanceID,
                         taskID,
-                        req,
                      });
                      cb(err);
                   });

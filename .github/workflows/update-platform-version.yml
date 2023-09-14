@@ -1,0 +1,106 @@
+name: "Update Platform Version"
+run-name: Update ab_platform_service to ${{ github.event.client_payload.version }}
+on:
+  repository_dispatch:
+    type: [platform_new_version]
+jobs:
+  call-update-sub:
+    name: Update
+    uses: digi-serve/.github/.github/workflows/update-sub-repo.yml@master
+    secrets: 
+      TOKEN:  ${{ secrets.PAT }}
+    with:
+      repository: digi-serve/appbuilder_platform_service
+      short_name: platform
+      folder: AppBuilder
+      version: ${{ github.event.client_payload.version }}
+
+  call-run-cy-test:
+    name: Test
+    needs: call-update-sub
+    uses: digi-serve/.github/.github/workflows/cypress-e2e-tests.yml@master
+    with:
+      ref: ${{ needs.call-update-sub.outputs.branch }}
+
+  call-generate-build-meta:
+    name: Meta
+    uses: digi-serve/.github/.github/workflows/generate-build-meta.yml@master
+    with: 
+      version: ${{ github.event.client_payload.version }}
+      identifier: p
+
+  call-bump-version:
+    name: Version
+    if: ${{ github.event.client_payload.type == 'minor' || github.event.client_payload.type == 'patch' }}
+    needs: [ call-update-sub, call-run-cy-test, call-generate-build-meta ]
+    uses: digi-serve/.github/.github/workflows/bump-version.yml@master
+    with:
+      ref: ${{ needs.call-update-sub.outputs.branch }}
+      # Consider platform version updates as patch
+      type: patch
+      build_meta: ${{ needs.call-generate-build-meta.outputs.build }}
+
+  call-merge-release:
+    name: Merge
+    needs: [ call-update-sub, call-bump-version ]
+    uses: digi-serve/.github/.github/workflows/branch-merge-release.yml@master
+    with: 
+      branch: ${{ needs.call-update-sub.outputs.branch }}
+      tag: v${{ needs.call-bump-version.outputs.new_version }}
+      body: "- platform updated to v${{ github.event.client_payload.version }}"
+
+  call-docker-build:
+    uses: digi-serve/.github/.github/workflows/docker-build.yml@master
+    needs: [ call-merge-release, call-bump-version]
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    with:
+      base_tag: master
+      tags: master,develop,${{ needs.call-bump-version.outputs.new_version }}
+
+  dispatch-runtime-update:
+    name: Dipsatch AB Runtime Update
+    needs: [ call-docker-build, call-bump-version ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get short name
+        id: short-name
+        env:
+          REPO: ${{ github.repository }}
+          REGX:  /ab_service_(.+)
+        run: |
+          [[ $REPO =~ $REGX ]]
+          echo "service=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v2
+        env: 
+          VERS: ${{ needs.call-bump-version.outputs.new_version }}
+          NAME: ${{ steps.short-name.outputs.service }}
+        with:
+          token: ${{ secrets.PAT }}
+          repository: digi-serve/ab_runtime
+          event-type: service_new_version
+          client-payload: '{"type": "patch", "version": "${{ env.VERS }}", "service": "${{ env.NAME }}"}'
+
+  call-open-pr-fail:
+    name: Tests Failed
+    needs: [ call-update-sub, call-run-cy-test ]
+    if: ${{ failure() && github.event.client_payload.type != 'major' }}
+    uses: digi-serve/.github/.github/workflows/open-pr.yml@master
+    with: 
+      branch: ${{ needs.call-update-sub.outputs.branch }}
+      title: Update platform to ${{ github.event.client_payload.version }} (from GitHub Actions Workflow)
+      body: Automatic updated failed. Check the [E2E tests](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+      release_notes: "- platform updated to ${{ github.event.client_payload.version }}"
+  
+  call-open-pr-major:
+    name: Major Change
+    needs: [ call-update-sub ]
+    if: ${{ github.event.client_payload.type == 'major' }}
+    uses: digi-serve/.github/.github/workflows/open-pr.yml@master
+    with: 
+      branch: ${{ needs.call-update-sub.outputs.branch }}
+      title: Update platform to ${{ github.event.client_payload.version }} (from GitHub Actions Workflow)
+      body: This is a major platform update. Please review and merge when ready.
+      release_notes: "- platform updated to ${{ github.event.client_payload.version }}"

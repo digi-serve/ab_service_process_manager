@@ -4,6 +4,6 @@ updates:
      directory: "/"
      schedule:
         interval: "daily"
-     target-branch: "develop"
+     target-branch: "master"
      allow:
         - dependency-name: "@digiserve/ab-utils"

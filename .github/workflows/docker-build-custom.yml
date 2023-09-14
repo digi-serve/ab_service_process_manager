@@ -1,0 +1,23 @@
+name: Docker Build Custom
+# Manually trigger a docker image build
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: Comma seperated list of tags, defaults to the branch/commit name.
+        type: string
+        required: true
+      base_tag:
+        description: Which tag to use for the base image (digiserve/service-cli)
+        default: develop
+        type: choice
+        options: [ master, develop ]
+jobs:
+  call-docker-build:
+    uses: digi-serve/.github/.github/workflows/docker-build.yml@master
+    with:
+      base_tag: ${{ inputs.base_tag }}
+      tags: ${{ inputs.tags }}
+    secrets: 
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

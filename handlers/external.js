@@ -41,57 +41,58 @@ module.exports = {
     * @param {fn} cb
     *        a node style callback(err, results) to send data when job is finished
     */
-   fn: function handler(req, cb) {
+   fn: async function handler(req, cb) {
       req.log("in process_manager.external");
 
-      // get the AB for the current tenant
-      ABBootstrap.init(req)
-         .then((AB) => {
-            var user = req.param("user");
-            var uuid = req.param("uuid");
-            var response = req.param("response");
+      let errParams = {
+         context:
+            "Service:process_manager.external: Error initializing Boostrap",
+      };
 
-            req.retry(() =>
-               AB.objectProcessForm().model().update(uuid, {
-                  response,
-                  responder: user,
-                  status: "processed",
-               })
-            )
-               .then((list) => {
-                  // respond to the API now:
-                  cb(null, { success: true });
+      try {
+         // get the AB for the current tenant
+         const AB = await ABBootstrap.init(req);
 
-                  // now trigger a Run on the updated process instance
-                  req.serviceRequest(
-                     "process_manager.run",
-                     { instanceID: list.process },
-                     (err /*, results */) => {
-                        if (err) {
-                           req.notify.developer(err, {
-                              context: "process_manager.external->run()",
-                              instanceID: list.process,
-                           });
-                        }
-                     }
-                  );
-               })
-               .catch((err) => {
-                  req.notify.developer(err, {
-                     context: "process_manager.external",
-                     user,
-                     uuid,
-                     response,
-                  });
-                  cb(err);
-               });
-         })
-         .catch((err) => {
-            req.notify.developer(err, {
-               context:
-                  "Service:process_manager.external: Error initializing Boostrap",
+         errParams = {
+            context: "Service:process_manager.external: Error getting Roles",
+         };
+
+         const roles = await req.retry(() => AB.objectRole().model().findAll());
+         const user = req.param("user");
+         const uuid = req.param("uuid");
+         const response = req.param("response");
+
+         errParams = {
+            context: "process_manager.external",
+            user,
+            uuid,
+            response,
+         };
+
+         const list = await req.retry(() =>
+            AB.objectProcessForm().model().update(uuid, {
+               response,
+               responder: user,
+               status: "processed",
+            })
+         );
+
+         cb();
+         req.broadcast.inboxUpdate([user], roles, list);
+
+         try {
+            await req.serviceRequest("process_manager.run", {
+               instanceID: list.process,
             });
-            cb(err);
-         });
+         } catch (err2) {
+            req.notify.developer(err2, {
+               context: "process_manager.external->run()",
+               instanceID: list.process,
+            });
+         }
+      } catch (err) {
+         req.notify.developer(err, errParams);
+         cb(err);
+      }
    },
 };

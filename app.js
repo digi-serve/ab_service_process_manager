@@ -7,11 +7,12 @@ const AB = require("@digiserve/ab-utils");
 var controller = AB.controller("process_manager");
 
 // controller.afterStartup((req, cb) => {
-controller.afterStartup((req, cb) => {
+controller.afterStartup(async (req, cb) => {
    let listeners = [];
+   var tenants;
 
-   req.serviceRequest("tenant_manager.config.list", {}, (err, tenants) => {
-      if (err) return cb(err);
+   try {
+      tenants = await req.serviceRequest("tenant_manager.config.list", {});
 
       tenants.forEach((t) => {
          let tReq = controller.requestObj({
@@ -19,28 +20,19 @@ controller.afterStartup((req, cb) => {
             tenantID: t.uuid,
          });
          listeners.push(
-            new Promise((resolve, reject) => {
-               tReq.serviceRequest(
-                  "process_manager.initialize_timer",
-                  {},
-                  (err) => {
-                     err ? reject(err) : resolve();
-                  }
-               );
-            })
+            tReq.serviceRequest("process_manager.initialize_timer", {})
          );
       });
 
-      Promise.all(listeners)
-         .then(() => cb())
-         .catch((error) => {
-            req.notify.developer(error, {
-               context: "process_manager.onstartup()",
-               tanents: tenants,
-            });
-            cb(error);
-         });
-   });
+      await Promise.all(listeners);
+      cb();
+   } catch (err) {
+      req.notify.developer(err, {
+         context: "process_manager.onstartup()",
+         tenants,
+      });
+      return cb(err);
+   }
 });
 // controller.beforeShutdown((cb)=>{ return cb(/* err */) });
 
@@ -48,3 +40,8 @@ controller.waitForDB = true;
 // {bool} wait for mysql to be accessible before .init() is processed
 
 controller.init();
+
+process.on("unhandledRejection", (reason /*, promise */) => {
+   console.error(reason);
+   console.error(reason.stack);
+});

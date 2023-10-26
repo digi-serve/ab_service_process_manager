@@ -7,3 +7,6 @@ updates:
      target-branch: "master"
      allow:
         - dependency-name: "@digiserve/ab-utils"
+     labels:
+        - "patch"
+        - "dependencies"

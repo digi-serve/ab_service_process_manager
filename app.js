@@ -10,7 +10,7 @@ if (AB.defaults.env("TELEMETRY_PROVIDER", "sentry") == "sentry") {
       dsn: AB.defaults.env(
          "SENTRY_DSN",
          "https://ff0af8f37828480d7791c2e58c0682a3@o144358.ingest.sentry.io/4506143282298880"
-   ),
+      ),
       release: version,
    });
 }
@@ -28,6 +28,8 @@ controller.afterStartup(async (req, cb) => {
          let tReq = controller.requestObj({
             jobID: "process_manager.onstartup()",
             tenantID: t.uuid,
+            // operate as the _system_ user
+            user: { languageCode: "en", username: "_system_" },
          });
          listeners.push(
             tReq.serviceRequest("process_manager.initialize_timer", {})

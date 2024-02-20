@@ -9,6 +9,17 @@ const ABBootstrap = require("../AppBuilder/ABBootstrap");
 // responsible for initializing and returning an {ABFactory} that will work
 // with the current tenant for the incoming request.
 
+function packageProcess(descApp, processes) {
+   processes.forEach((p) => {
+      var pobj = p.toObj();
+      var pdesc = {
+         id: pobj.id,
+         translations: pobj.translations,
+      };
+      descApp.processes.push(pdesc);
+   });
+}
+
 module.exports = {
    /**
     * Key: the cote message key we respond to.
@@ -45,51 +56,71 @@ module.exports = {
     * @param {fn} cb
     *        a node style callback(err, results) to send data when job is finished
     */
-   fn: function handler(req, cb) {
+   fn: async function handler(req, cb) {
       //
 
       req.log("in process_manager.inbox.meta");
 
-      // get the AB for the current tenant
-      ABBootstrap.init(req)
-         .then((AB) => {
-            var ids = req.param("ids") || [];
+      try {
+         // get the AB for the current tenant
+         let AB = await ABBootstrap.init(req);
 
-            var allApplications = [];
+         var ids = req.param("ids") || [];
 
-            AB.applications().forEach((app) => {
-               var matchingProcesses = app.processes(
-                  (p) => ids.indexOf(p.id) > -1
-               );
-               if (matchingProcesses.length > 0) {
-                  var obj = app.toObj();
-                  var desc = {
-                     id: obj.id,
-                     translations: obj.translations,
-                     processes: [],
-                  };
+         var allApplications = [];
 
-                  matchingProcesses.forEach((p) => {
-                     var pobj = p.toObj();
-                     var pdesc = {
-                        id: pobj.id,
-                        translations: pobj.translations,
-                     };
-                     desc.processes.push(pdesc);
-                  });
+         // For display to the User, we package our Process Information
+         // under the Application it is registered under.
+         AB.applications().forEach((app) => {
+            var matchingProcesses = app.processes(
+               (p) => ids.indexOf(p.id) > -1
+            );
+            if (matchingProcesses.length > 0) {
+               var obj = app.toObj();
+               var desc = {
+                  id: obj.id,
+                  translations: obj.translations,
+                  processes: [],
+               };
 
-                  allApplications.push(desc);
-               }
-            });
+               packageProcess(desc, matchingProcesses);
+               matchingProcesses.forEach((p) => {
+                  // remove this entry from ids:
+                  ids = ids.filter((i) => i != p.id);
+               });
 
-            cb(null, allApplications);
-         })
-         .catch((err) => {
-            req.notify.developer(err, {
-               context:
-                  "Service:process_manager.inbox.meta: Error initializing ABFactory",
-            });
-            cb(err);
+               allApplications.push(desc);
+            }
          });
+
+         // However not ALL Processes are Under an Application, so try to
+         // catch those:
+         // any id left in ids are those without Applications:
+         if (ids.length) {
+            var missingProcesses = AB.processes((p) => ids.indexOf(p.id) > -1);
+            let descSystem = {
+               id: "_system_",
+               translations: [
+                  {
+                     language_code: "en",
+                     label: "System",
+                     description: "Internal System Process",
+                  },
+               ],
+               processes: [],
+            };
+
+            packageProcess(descSystem, missingProcesses);
+            allApplications.push(descSystem);
+         }
+
+         cb(null, allApplications);
+      } catch (err) {
+         req.notify.developer(err, {
+            context:
+               "Service:process_manager.inbox.meta: Error initializing ABFactory",
+         });
+         cb(err);
+      }
    },
 };

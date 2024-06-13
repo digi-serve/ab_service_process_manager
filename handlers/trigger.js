@@ -23,6 +23,7 @@ module.exports = {
       key: { string: true, required: true },
       data: { object: true, required: true },
       requestID: { string: true, optional: true }, // Needed to prevent duplicates if the request is retried
+      rowLogID: { string: { uuid: true }, optional: true },
       // email: { string: { email: true }, optional: true },
    },
 
@@ -43,6 +44,7 @@ module.exports = {
          .then((AB) => {
             var key = req.param("key");
             var data = req.param("data");
+            const rowLogID = req.param("rowLogID");
 
             var allTriggers = [];
             AB.processes().forEach((p) => {
@@ -54,7 +56,7 @@ module.exports = {
                      : undefined;
                   // allTriggers.push(retryTrigger(t, data, req));
                   allTriggers.push(
-                     req.retry(() => t.trigger(data, req, instanceKey))
+                     req.retry(() => t.trigger(data, req, instanceKey, rowLogID))
                   );
                }
             });

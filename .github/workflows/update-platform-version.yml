@@ -58,6 +58,7 @@ jobs:
     with:
       base_tag: master
       tags: master,develop,${{ needs.call-bump-version.outputs.new_version }}
+      branch: master
 
   dispatch-runtime-update:
     name: Dipsatch AB Runtime Update

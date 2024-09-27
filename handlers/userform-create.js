@@ -72,8 +72,11 @@ module.exports = {
             newForm.roles = roles;
          }
 
-         const users = req.param("users");
-         if (users && users.length > 0) {
+         let users = req.param("users");
+         if (users && !Array.isArray(users))
+            users = [users];
+
+         if (users?.length > 0) {
             newForm.users = users;
          }
 
@@ -91,11 +94,23 @@ module.exports = {
                (await req.retry(() =>
                   AB.objectUser()
                      .model()
-                     .find({
-                        or: [
-                           { uuid: newForm.users },
-                           { username: newForm.users },
-                        ],
+                     .findAll({
+                        where: {
+                           glue: "or",
+                           rules: [
+                              {
+                                 key: "uuid",
+                                 rule: "in",
+                                 value: newForm.users,
+                              },
+                              {
+                                 key: "username",
+                                 rule: "in",
+                                 value: newForm.users,
+                              },
+                           ],
+                        },
+                        populate: false,
                      })
                )) ?? [];
 

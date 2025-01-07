@@ -1,6 +1,6 @@
 {
   "name": "process_manager",
-  "version": "1.0.94+p10438.c20403",
+  "version": "1.0.95+p10439.c20404",
   "description": "(AppBuilder) a micro service to manage our process tasks",
   "main": "app.js",
   "author": "Johnny Hausman",

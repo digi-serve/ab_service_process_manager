@@ -216,7 +216,9 @@ module.exports = {
                                  if (rule.glue)
                                     return await parseScopeQuery(rule);
                                  else {
-                                    const query = AB.queryByID(rule.value);
+                                    // rule.value for in_query_field is [queryID]:[fieldID]
+                                    const queryID = rule.value.split(":")[0];
+                                    const query = AB.queryByID(queryID);
                                     const objects = query.objectIDs.map((id) =>
                                        AB.objectByID(id)
                                     );

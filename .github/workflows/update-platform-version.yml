@@ -66,7 +66,7 @@ jobs:
 
   call-dispatch-update:
     needs: [ call-docker-build, call-bump-version ]
-    uses: digi-serve/.github/.github/dispatch-update.yml@master
+    uses: digi-serve/.github/.github/workflows/dispatch-update.yml@master
     with:
       type: patch
       version: ${{ needs.call-bump-version.outputs.new_version }}

@@ -1,4 +1,6 @@
 name: PR Merged
+# NOTE - this workflow is synced automatically. 
+# Edit the template in planning/templates/services/pr-merge-release.yml
 on:
   pull_request:
     types: [closed]
@@ -36,29 +38,11 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     with:
-      base_tag: master
       tags: master,develop,${{ needs.call-bump-version.outputs.new_version }}
-  dispatch-runtime-update:
-    name: Dipsatch AB Runtime Update
+  call-dispatch-runtime-update:
+    uses: digi-serve/.github/.github/workflows/dispatch-update.yml@master
     needs: [ call-docker-build, call-bump-version, call-get-label ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get short name
-        id: short-name
-        env:
-          REPO: ${{ github.repository }}
-          REGX:  /ab_service_(.+)
-        run: |
-          [[ $REPO =~ $REGX ]]
-          echo "service=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v2
-        env: 
-          TYPE: ${{ needs.call-get-label.outputs.label }}
-          VERS: ${{ needs.call-bump-version.outputs.new_version }}
-          NAME: ${{ steps.short-name.outputs.service }}
-        with:
-          token: ${{ secrets.PAT }}
-          repository: digi-serve/ab_runtime
-          event-type: service_new_version
-          client-payload: '{"type": "${{ env.TYPE }}", "version": "${{ env.VERS }}", "service": "${{ env.NAME }}"}'
+    with:
+      type: ${{ needs.call-get-label.outputs.label }}
+      version: ${{ needs.call-bump-version.outputs.new_version }}
+      app_id: ${{ vars.GS_DEV_APP_ID }}

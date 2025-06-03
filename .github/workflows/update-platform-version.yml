@@ -1,14 +1,19 @@
-name: "Update Platform Version"
+name: Update Platform Version
+# NOTE - this workflow is synced automatically. 
+# Edit the template in planning/templates/services/merging-rules.yml
 run-name: Update ab_platform_service to ${{ github.event.client_payload.version }}
 on:
   repository_dispatch:
-    type: [platform_new_version]
+    types: [platform_new_version]
+permissions:
+  # Needed for the Update Sub Repo Job
+  contents: write
 jobs:
   call-update-sub:
     name: Update
     uses: digi-serve/.github/.github/workflows/update-sub-repo.yml@master
     secrets: 
-      TOKEN:  ${{ secrets.PAT }}
+      TOKEN:  ${{ secrets.GITHUB_TOKEN }}
     with:
       repository: digi-serve/appbuilder_platform_service
       short_name: platform
@@ -58,31 +63,16 @@ jobs:
     with:
       base_tag: master
       tags: master,develop,${{ needs.call-bump-version.outputs.new_version }}
-      branch: master
 
-  dispatch-runtime-update:
-    name: Dipsatch AB Runtime Update
+  call-dispatch-update:
     needs: [ call-docker-build, call-bump-version ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get short name
-        id: short-name
-        env:
-          REPO: ${{ github.repository }}
-          REGX:  /ab_service_(.+)
-        run: |
-          [[ $REPO =~ $REGX ]]
-          echo "service=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
-      - name: Repository Dispatch
-        uses: peter-evans/repository-dispatch@v2
-        env: 
-          VERS: ${{ needs.call-bump-version.outputs.new_version }}
-          NAME: ${{ steps.short-name.outputs.service }}
-        with:
-          token: ${{ secrets.PAT }}
-          repository: digi-serve/ab_runtime
-          event-type: service_new_version
-          client-payload: '{"type": "patch", "version": "${{ env.VERS }}", "service": "${{ env.NAME }}"}'
+    uses: digi-serve/.github/.github/dispatch-update.yml@master
+    with:
+      type: patch
+      version: ${{ needs.call-bump-version.outputs.new_version }}
+      app_id: ${{ vars.GS_DEV_APP_ID }}
+    secrets:
+      app_secret: ${{ secrets.GS_DEV_APP_PK }}
 
   call-open-pr-fail:
     name: Tests Failed

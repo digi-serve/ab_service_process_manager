@@ -1,4 +1,6 @@
 name: Merging Rules
+# NOTE - this workflow is synced automatically. 
+# Edit the template in planning/templates/services/merging-rules.yml
 on:
    # Run on pull requests into the #master branch
    pull_request:
@@ -18,4 +20,4 @@ jobs:
       if: ${{ github.actor == 'dependabot[bot]' }}
       uses: digi-serve/.github/.github/workflows/dependabot-merge.yml@master
       secrets: 
-         DEPENDABOT_TOKEN: ${{ secrets.DEPENDABOT_TOKEN }}
+         DEPENDABOT_TOKEN: ${{ secrets.GITHUB_TOKEN }}

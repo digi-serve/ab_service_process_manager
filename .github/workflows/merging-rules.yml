@@ -13,11 +13,11 @@ permissions:
 jobs:
    call-e2e-tests:
       name: E2E Tests
-      uses: digi-serve/.github/.github/workflows/cypress-e2e-tests.yml@master
+      uses: CruGlobal/.github/.github/workflows/cypress-e2e-tests.yml@master
    call-dependabot-merge:
       name: Dependabot
       needs: call-e2e-tests
       if: ${{ github.actor == 'dependabot[bot]' }}
-      uses: digi-serve/.github/.github/workflows/dependabot-merge.yml@master
+      uses: CruGlobal/.github/.github/workflows/dependabot-merge.yml@master
       secrets: 
          DEPENDABOT_TOKEN: ${{ secrets.GITHUB_TOKEN }}

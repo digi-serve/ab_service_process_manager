@@ -14,7 +14,7 @@ on:
         options: [ master, develop ]
 jobs:
   call-docker-build:
-    uses: digi-serve/.github/.github/workflows/docker-build.yml@master
+    uses: CruGlobal/.github/.github/workflows/docker-build.yml@master
     with:
       base_tag: ${{ inputs.base_tag }}
       tags: ${{ inputs.tags }}

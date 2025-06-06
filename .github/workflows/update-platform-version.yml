@@ -11,11 +11,11 @@ permissions:
 jobs:
   call-update-sub:
     name: Update
-    uses: digi-serve/.github/.github/workflows/update-sub-repo.yml@master
+    uses: CruGlobal/.github/.github/workflows/update-sub-repo.yml@master
     secrets: 
       TOKEN:  ${{ secrets.GITHUB_TOKEN }}
     with:
-      repository: digi-serve/appbuilder_platform_service
+      repository: CruGlobal/appbuilder_platform_service
       short_name: platform
       folder: AppBuilder
       version: ${{ github.event.client_payload.version }}
@@ -23,13 +23,13 @@ jobs:
   call-run-cy-test:
     name: Test
     needs: call-update-sub
-    uses: digi-serve/.github/.github/workflows/cypress-e2e-tests.yml@master
+    uses: CruGlobal/.github/.github/workflows/cypress-e2e-tests.yml@master
     with:
       ref: ${{ needs.call-update-sub.outputs.branch }}
 
   call-generate-build-meta:
     name: Meta
-    uses: digi-serve/.github/.github/workflows/generate-build-meta.yml@master
+    uses: CruGlobal/.github/.github/workflows/generate-build-meta.yml@master
     with: 
       version: ${{ github.event.client_payload.version }}
       identifier: p
@@ -38,7 +38,7 @@ jobs:
     name: Version
     if: ${{ github.event.client_payload.type == 'minor' || github.event.client_payload.type == 'patch' }}
     needs: [ call-update-sub, call-run-cy-test, call-generate-build-meta ]
-    uses: digi-serve/.github/.github/workflows/bump-version.yml@master
+    uses: CruGlobal/.github/.github/workflows/bump-version.yml@master
     with:
       ref: ${{ needs.call-update-sub.outputs.branch }}
       # Consider platform version updates as patch
@@ -48,14 +48,14 @@ jobs:
   call-merge-release:
     name: Merge
     needs: [ call-update-sub, call-bump-version ]
-    uses: digi-serve/.github/.github/workflows/branch-merge-release.yml@master
+    uses: CruGlobal/.github/.github/workflows/branch-merge-release.yml@master
     with: 
       branch: ${{ needs.call-update-sub.outputs.branch }}
       tag: v${{ needs.call-bump-version.outputs.new_version }}
       body: "- platform updated to v${{ github.event.client_payload.version }}"
 
   call-docker-build:
-    uses: digi-serve/.github/.github/workflows/docker-build.yml@master
+    uses: CruGlobal/.github/.github/workflows/docker-build.yml@master
     needs: [ call-merge-release, call-bump-version]
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -66,7 +66,7 @@ jobs:
 
   call-dispatch-update:
     needs: [ call-docker-build, call-bump-version ]
-    uses: digi-serve/.github/.github/workflows/dispatch-update.yml@master
+    uses: CruGlobal/.github/.github/workflows/dispatch-update.yml@master
     with:
       type: patch
       version: ${{ needs.call-bump-version.outputs.new_version }}
@@ -78,7 +78,7 @@ jobs:
     name: Tests Failed
     needs: [ call-update-sub, call-run-cy-test ]
     if: ${{ failure() && github.event.client_payload.type != 'major' }}
-    uses: digi-serve/.github/.github/workflows/open-pr.yml@master
+    uses: CruGlobal/.github/.github/workflows/open-pr.yml@master
     with: 
       branch: ${{ needs.call-update-sub.outputs.branch }}
       title: Update platform to ${{ github.event.client_payload.version }} (from GitHub Actions Workflow)
@@ -89,7 +89,7 @@ jobs:
     name: Major Change
     needs: [ call-update-sub ]
     if: ${{ github.event.client_payload.type == 'major' }}
-    uses: digi-serve/.github/.github/workflows/open-pr.yml@master
+    uses: CruGlobal/.github/.github/workflows/open-pr.yml@master
     with: 
       branch: ${{ needs.call-update-sub.outputs.branch }}
       title: Update platform to ${{ github.event.client_payload.version }} (from GitHub Actions Workflow)
